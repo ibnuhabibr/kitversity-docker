@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # Database MySQL
+  kitversity-db:
+    image: mysql:8.0
+    container_name: kitversity-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - kitversity-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Aplikasi Next.js
+  kitversity-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        JWT_SECRET: ${JWT_SECRET}
+        DB_HOST: kitversity-db
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_DATABASE: ${DB_DATABASE}
+    container_name: kitversity-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=kitversity-db
+      - DB_PORT=3306
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+      - JWT_SECRET=${JWT_SECRET}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+    depends_on:
+      kitversity-db:
+        condition: service_healthy
+    networks:
+      - kitversity-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kitversity.rule=Host(`kitversity.com`) || Host(`www.kitversity.com`)"
+      - "traefik.http.routers.kitversity.entrypoints=websecure"
+      - "traefik.http.routers.kitversity.tls.certresolver=letsencrypt"
+      - "traefik.http.services.kitversity.loadbalancer.server.port=3000"
+      # Redirect www to non-www
+      - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www.kitversity.com/(.*)"
+      - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://kitversity.com/$${1}"
+      - "traefik.http.routers.kitversity.middlewares=www-redirect"
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Global HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt_data:/letsencrypt
+    networks:
+      - kitversity-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.kitversity.com`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+volumes:
+  mysql_data:
+    driver: local
+  letsencrypt_data:
+    driver: local
+
+networks:
+  kitversity-network:
+    driver: bridge

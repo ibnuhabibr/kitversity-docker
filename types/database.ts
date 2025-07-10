@@ -23,9 +23,9 @@ export interface Product {
   stock: number;
   image_url?: string;
   category?: string;
-  rating: number;
-  sold: number;
-  variants?: string; // <-- TAMBAHKAN INI
+  rating?: number;
+  sold?: number;
+  variants?: string; // JSON string
   created_at: Date;
   updated_at: Date;
 }
@@ -34,11 +34,13 @@ export interface Order {
   id: number;
   user_id: number | null;
   total_amount: number;
-  status: string;
-  shipping_address: string;
-  shipping_method: string;
-  payment_method: string; // Diubah ke string agar lebih fleksibel
-  customer_info: string;
+  status: 'pending-payment' | 'payment-confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  shipping_address?: string;
+  shipping_method?: string;
+  payment_method: 'bank_transfer' | 'virtual_account_bca' | 'virtual_account_bri' | 'virtual_account_bni' | 'virtual_account_mandiri' | 'shopeepay' | 'gopay' | 'qris';
+  customer_info: string; // JSON string
+  payment_proof?: string;
+  admin_notes?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -52,16 +54,16 @@ export interface OrderItem {
   created_at: Date;
 }
 
-// --- TIPE ENUM DIPERBARUI DI SINI ---
 export interface Payment {
   id: number;
   order_id: number;
   amount: number;
   payment_method: 'bank_transfer' | 'virtual_account_bca' | 'virtual_account_bri' | 'virtual_account_bni' | 'virtual_account_mandiri' | 'shopeepay' | 'gopay' | 'qris';
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'expired';
-  midtrans_token?: string;
-  midtrans_redirect_url?: string;
-  paid_at?: Date;
+  status: 'pending' | 'confirmed' | 'failed' | 'cancelled';
+  payment_proof?: string;
+  confirmed_by?: number;
+  confirmed_at?: Date;
+  notes?: string;
   created_at: Date;
   updated_at: Date;
 }

@@ -17,14 +17,14 @@ import Image from 'next/image';
 const paymentDetails = {
     bank_transfer: {
         title: "Transfer Bank BCA",
-        rekening: "7355011704",
+        rekening: "7355211282",
         atasNama: "Ibnu Habib Ridwansyah",
         logo: "/bca.png",
         note: "Bisa transfer melalui bank lain atau e-wallet (ShopeePay, GoPay, DANA, dll) ke rekening BCA ini."
     },
     virtual_account_bca: {
         title: "BCA Virtual Account",
-        rekening: "122085645970893",
+        rekening: "122085135706028",
         atasNama: "ShopeePay (a.n. ibnuhabib017)",
         logo: "/bca.png",
         instructions: {
@@ -34,27 +34,27 @@ const paymentDetails = {
     },
     virtual_account_bri: {
         title: "BRI Virtual Account",
-        rekening: "112085645970893",
+        rekening: "112085135706028",
         atasNama: "ShopeePay (a.n. ibnuhabib017)",
         logo: "/bri.png",
         instructions: {
             "iBanking": "Pilih Pembayaran > BRIVA > Masukkan No. VA di atas > Masukkan nominal > Pastikan nama & username sesuai > Masukkan password & mToken.",
-            "mBanking (BRImo)": "Pilih Dompet Digital > Top Up Baru > Pilih ShopeePay > Masukkan nomor HP (085645970893) > Masukkan nominal > Pastikan data benar > Masukkan PIN."
+            "mBanking (BRImo)": "Pilih Dompet Digital > Top Up Baru > Pilih ShopeePay > Masukkan nomor HP (085135706028) > Masukkan nominal > Pastikan data benar > Masukkan PIN."
         }
     },
     virtual_account_bni: {
         title: "BNI Virtual Account",
-        rekening: "807085645970893",
+        rekening: "807085135706028",
         atasNama: "ShopeePay (a.n. ibnuhabib017)",
         logo: "/bni.png",
         instructions: {
             "iBanking": "Pilih Transfer > Virtual Account Billing > Masukkan No. VA di atas > Masukkan nominal > Pastikan nama & username sesuai > Masukkan Kode Otentikasi.",
-            "mBanking": "Pilih E-Wallet > ShopeePay > Input Baru > Masukkan No. HP (085645970893) > Masukkan nominal > Masukkan Password Transaksi."
+            "mBanking": "Pilih E-Wallet > ShopeePay > Input Baru > Masukkan No. HP (085135706028) > Masukkan nominal > Masukkan Password Transaksi."
         }
     },
     virtual_account_mandiri: {
         title: "Mandiri Virtual Account",
-        rekening: "893085645970893",
+        rekening: "893085135706028",
         atasNama: "ShopeePay (a.n. ibnuhabib017)",
         logo: "/mandiri.png",
         instructions: {
@@ -63,7 +63,7 @@ const paymentDetails = {
     },
     shopeepay: {
         title: "Transfer ShopeePay",
-        rekening: "085645970893",
+        rekening: "085135706028",
         atasNama: "ibnuhabib017",
         logo: "/shopeepay.png",
         instructions: {
@@ -72,7 +72,7 @@ const paymentDetails = {
     },
     gopay: {
         title: "Transfer GoPay",
-        rekening: "085645970893",
+        rekening: "085135706028",
         atasNama: "Ibnu Habib Ridwansyah",
         logo: "/gopay.png",
         instructions: {
@@ -85,7 +85,7 @@ const paymentDetails = {
         title: "QRIS",
         atasNama: "MP-TOKO KITVERSITY",
         logo: "/qris-logo.png",
-        qrisImage: "/qris.png", // PENTING: Ganti dengan path gambar QRIS kamu!
+        qrisImage: "/qris.png",
         instructions: {
             "Panduan Umum": "1. Buka aplikasi M-Banking atau E-Wallet Anda (GoPay, DANA, ShopeePay, OVO, dll).\n2. Pilih menu Bayar atau Scan QR.\n3. Scan kode QR di atas.\n4. Masukkan jumlah total pembayaran dan selesaikan transaksi."
         },

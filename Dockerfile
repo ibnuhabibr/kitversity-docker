@@ -1,81 +1,62 @@
-# Multi-stage Dockerfile dengan optimasi production
+# Use Node.js 18 Alpine for smaller image size
 FROM node:18-alpine AS base
 
-# Install dependencies untuk native modules
-RUN apk add --no-cache libc6-compat python3 make g++
-
-# Dependencies stage
+# Install dependencies only when needed
 FROM base AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+COPY package*.json ./
 
-# Development dependencies untuk build
-FROM base AS build-deps
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Clear npm cache and install dependencies
+RUN npm cache clean --force
+RUN rm -rf node_modules package-lock.json
+RUN npm install
+RUN npm ci --only=production --ignore-scripts
 
-# Builder stage
+# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=build-deps /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build arguments
-ARG NEXT_PUBLIC_APP_URL
-ARG JWT_SECRET
-ARG DB_HOST
-ARG DB_USER
-ARG DB_PASSWORD
-ARG DB_DATABASE
+# Generate a new package-lock.json if needed
+RUN npm install --package-lock-only
 
-# Environment variables untuk build
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-ENV JWT_SECRET=$JWT_SECRET
-ENV DB_HOST=$DB_HOST
-ENV DB_USER=$DB_USER
-ENV DB_PASSWORD=$DB_PASSWORD
-ENV DB_DATABASE=$DB_DATABASE
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
-# Build application
+# Build the application
+ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
-# Production runner
+# Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# Create non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Create logs directory
-RUN mkdir -p /app/logs && chown nextjs:nodejs /app/logs
-
-# Copy built application
 COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy production dependencies
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
 
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
 
+# server.js is created by next build from the standalone output
+# https://nextjs.org/docs/pages/api-reference/next-config-js/output
 CMD ["node", "server.js"]
